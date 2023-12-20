@@ -1,7 +1,18 @@
-const cheerio = require("cheerio");
+const express = require("express");
 const axios = require("axios");
+const cheerio = require("cheerio");
 
-async function scrapeTrainData(trainNumber, date) {
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Root route handler
+app.get("/", (req, res) => {
+  res.send("Welcome to the running status scraper API!");
+});
+
+// Train status route handler
+app.get("/:trainNumber/:date", async (req, res) => {
+  const { trainNumber, date } = req.params;
   const url = `https://runningstatus.in/status/${trainNumber}-on-${date}`;
 
   try {
@@ -32,11 +43,18 @@ async function scrapeTrainData(trainNumber, date) {
       trainData.push(stationData);
     });
 
-    console.log(JSON.stringify(trainData, null, 2));
+    const result = {
+      key: `${trainNumber}_${date}`,
+      value: trainData,
+    };
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching data:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}
+});
 
-// Example usage
-scrapeTrainData(12980, "20231218");
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
